@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Melbourne Map - Bus & Tram Sample</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        #map {
+            width: 100%;
+            height: 100vh;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script>
+        // Create map focused on Melbourne
+        const map = L.map('map').setView([-37.8136, 144.9631], 12);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution:
+                '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        }).addTo(map);
+
+        function buildPopupHtml(title, imageUrl) {
+            return `
+        <div>
+          <a href="${imageUrl}" target="_blank" style="font-weight:bold; text-decoration:none;">
+            ${title}
+          </a>
+        </div>
+      `;
+        }
+
+        const locations = [
+            // === TRAM STOPS ===
+
+            {
+                id: "tram_r75_s70",
+                type: "tram",
+                title: "Stop 70: Blackburn Road (Tram)",
+                lat: -37.8525534,
+                lng: 145.1511290,
+                imageUrl: "images/tram_r75_s70.png",
+            },
+
+            // === BUS STOPS ===
+
+            {
+                id: "bus_southern_cross",
+                type: "bus",
+                title: "Bus Stop: Southern Cross Bus Bay (Sample)",
+                lat: -37.8183,
+                lng: 144.9526,
+                imageUrl: "https://via.placeholder.com/600x400?text=Bus+Stop+Southern+Cross",
+            },
+
+        ];
+
+        locations.forEach((loc) => {
+            L.marker([loc.lat, loc.lng])
+                .addTo(map)
+                .bindPopup(buildPopupHtml(loc.title, loc.imageUrl));
+        });
+    </script>
+</body>
+
+</html>
