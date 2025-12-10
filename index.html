@@ -198,31 +198,38 @@
                 '</div>';
         }
 
-        var locations = [
-            {
-                id: "tram_r75_s70",
-                type: "tram",
-                title: "Stop 70: Blackburn Road (Tram)",
-                lat: -37.8525534,
-                lng: 145.1511290,
-                imageUrl: "images/tram_r75_s70.png"
-            },
-            {
-                id: "bus_southern_cross",
-                type: "bus",
-                title: "Bus Stop: Southern Cross Bus Bay (Sample)",
-                lat: -37.8183,
-                lng: 144.9526,
-                imageUrl: "https://via.placeholder.com/600x400?text=Bus+Stop+Southern+Cross"
-            }
-        ];
-
-        // Add markers
-        locations.forEach(function (loc) {
-            L.marker([loc.lat, loc.lng])
-                .addTo(map)
-                .bindPopup(buildPopupHtml(loc.title, loc.imageUrl));
+        // Custom marker icons
+        const tramIcon = L.icon({
+            iconUrl: 'icons/tram.png',
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [-5, -28]
         });
+
+        const busIcon = L.icon({
+            iconUrl: 'icons/bus.png',
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -28]
+        });
+
+        var locations;
+        fetch('/data.json')
+            .then(response => response.json())
+            .then(locations => {
+                locations.forEach(loc => {
+
+                    let iconToUse = null;
+                    if (loc.type === "tram") iconToUse = tramIcon;
+                    if (loc.type === "bus") iconToUse = busIcon;
+
+                    L.marker([loc.lat, loc.lng], { icon: iconToUse })
+                        .addTo(map)
+                        .bindPopup(buildPopupHtml(loc.title, loc.imageUrl));
+                });
+            })
+            .catch(err => console.error("Failed to load /data.json:", err));
+
 
         // Modal + panzoom logic
         var $pzImage = null;

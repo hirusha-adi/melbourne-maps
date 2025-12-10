@@ -1,0 +1,18 @@
+[
+    {
+        "id": "tram_r75_s70",
+        "type": "tram",
+        "title": "Tram 75 - Stop 70: Blackburn Road",
+        "lat": -37.8525534,
+        "lng": 145.1511290,
+        "imageUrl": "images/tram_r75_s70.png"
+    },
+    {
+        "id": "bus_southern_cross",
+        "type": "bus",
+        "title": "Bus Stop: Southern Cross Bus Bay (Sample)",
+        "lat": -37.8183,
+        "lng": 144.9526,
+        "imageUrl": "https://via.placeholder.com/600x400?text=Bus+Stop+Southern+Cross"
+    }
+]
