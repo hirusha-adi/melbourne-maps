@@ -44,7 +44,6 @@
         /* Modal overlay */
         #image-modal {
             display: none;
-            /* hidden by default */
             position: fixed;
             z-index: 9999;
             inset: 0;
@@ -61,17 +60,14 @@
             max-width: 90vw;
             max-height: 85vh;
             box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
         #image-modal .modal-title {
             font-weight: bold;
-            margin-bottom: 8px;
-        }
-
-        #image-modal img {
-            max-width: 100%;
-            max-height: 70vh;
-            display: block;
+            margin-bottom: 4px;
         }
 
         #image-modal .modal-close {
@@ -82,6 +78,49 @@
             background: transparent;
             font-size: 20px;
             cursor: pointer;
+        }
+
+        /* Container that clips the zoomed image */
+        #panzoom-container {
+            flex: 1;
+            max-height: 70vh;
+            min-height: 300px;
+            overflow: hidden;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #modal-image {
+            max-width: 100%;
+            max-height: 100%;
+            display: block;
+            cursor: grab;
+        }
+
+        #modal-image:active {
+            cursor: grabbing;
+        }
+
+        .zoom-controls {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .zoom-controls button {
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            background: #f5f5f5;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .zoom-controls button:hover {
+            background: #e5e5e5;
         }
     </style>
 </head>
@@ -94,18 +133,31 @@
         <div class="modal-content">
             <button class="modal-close" id="modal-close">&times;</button>
             <div class="modal-title" id="modal-title"></div>
-            <img id="modal-image" src="" alt="" />
+
+            <div id="panzoom-container">
+                <img id="modal-image" src="" alt="" />
+            </div>
+
+            <div class="zoom-controls">
+                <button id="zoom-out">-</button>
+                <button id="zoom-reset">Reset</button>
+                <button id="zoom-in">+</button>
+            </div>
         </div>
     </div>
 
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- jQuery 2.x (compatible with panzoom) -->
+    <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+    <!-- jQuery Mousewheel (for scroll zoom) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-mousewheel/3.1.13/jquery.mousewheel.min.js"></script>
+    <!-- jQuery Panzoom (for zoom + drag) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.panzoom/3.2.2/jquery.panzoom.min.js"></script>
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
         // Create map focused on Melbourne
-        const map = L.map('map').setView([-37.8136, 144.9631], 12);
+        var map = L.map('map').setView([-37.8136, 144.9631], 12);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution:
@@ -115,59 +167,92 @@
 
         // Build popup HTML with title + thumbnail
         function buildPopupHtml(title, imageUrl) {
-            return `
-                <div class="popup-content">
-                    <div class="popup-title">${title}</div>
-                    <img
-                        src="${imageUrl}"
-                        alt="${title}"
-                        class="popup-thumb"
-                        data-image-url="${imageUrl}"
-                        data-image-title="${title}"
-                    />
-                </div>
-            `;
+            return '' +
+                '<div class="popup-content">' +
+                '  <div class="popup-title">' + title + '</div>' +
+                '  <img ' +
+                '    src="' + imageUrl + '" ' +
+                '    alt="' + title + '" ' +
+                '    class="popup-thumb" ' +
+                '    data-image-url="' + imageUrl + '" ' +
+                '    data-image-title="' + title + '" ' +
+                '  />' +
+                '</div>';
         }
 
-        const locations = [
-            // === TRAM STOPS ===
+        var locations = [
             {
                 id: "tram_r75_s70",
                 type: "tram",
                 title: "Stop 70: Blackburn Road (Tram)",
                 lat: -37.8525534,
                 lng: 145.1511290,
-                imageUrl: "images/tram_r75_s70.png",
+                imageUrl: "images/tram_r75_s70.png"
             },
-
-            // === BUS STOPS ===
             {
                 id: "bus_southern_cross",
                 type: "bus",
                 title: "Bus Stop: Southern Cross Bus Bay (Sample)",
                 lat: -37.8183,
                 lng: 144.9526,
-                imageUrl: "https://via.placeholder.com/600x400?text=Bus+Stop+Southern+Cross",
-            },
+                imageUrl: "https://via.placeholder.com/600x400?text=Bus+Stop+Southern+Cross"
+            }
         ];
 
         // Add markers
-        locations.forEach((loc) => {
+        locations.forEach(function (loc) {
             L.marker([loc.lat, loc.lng])
                 .addTo(map)
                 .bindPopup(buildPopupHtml(loc.title, loc.imageUrl));
         });
 
-        // Modal logic (jQuery)
+        // Modal + panzoom logic
+        var $pzImage = null;
+
+        function initPanzoom() {
+            var $img = $('#modal-image');
+
+            // Destroy existing panzoom if any
+            try {
+                $img.panzoom('destroy');
+            } catch (e) {
+                // ignore if not initialised
+            }
+
+            // Initialise panzoom on the image
+            $pzImage = $img.panzoom({
+                minScale: 1,
+                maxScale: 5,
+                contain: 'invert',
+                increment: 0.2
+            });
+
+            var $container = $('#panzoom-container');
+
+            // Scroll zoom
+            $container.off('mousewheel.panzoom').on('mousewheel.panzoom', function (e) {
+                e.preventDefault();
+                // mousewheel plugin: e.deltaY
+                var delta = e.deltaY;
+                var zoomOut = delta < 0; // wheel down -> zoom out
+                $pzImage.panzoom('zoom', zoomOut, {
+                    increment: 0.15,
+                    focal: e
+                });
+            });
+        }
 
         // Open modal when thumbnail is clicked
         $(document).on('click', '.popup-thumb', function () {
-            const imageUrl = $(this).data('image-url');
-            const title = $(this).data('image-title');
+            var imageUrl = $(this).data('image-url');
+            var title = $(this).data('image-title');
 
             $('#modal-image').attr('src', imageUrl);
             $('#modal-title').text(title);
             $('#image-modal').css('display', 'flex'); // flex for centering
+
+            // Wait a tick so the image is laid out, then init panzoom
+            setTimeout(initPanzoom, 50);
         });
 
         // Close modal on close button
@@ -180,6 +265,28 @@
         $('#image-modal').on('click', function (e) {
             if (e.target.id === 'image-modal') {
                 $('#image-modal').hide();
+            }
+        });
+
+        // Zoom controls
+        $('#zoom-in').on('click', function (e) {
+            e.preventDefault();
+            if ($pzImage) {
+                $pzImage.panzoom('zoom', false, { increment: 0.2 });
+            }
+        });
+
+        $('#zoom-out').on('click', function (e) {
+            e.preventDefault();
+            if ($pzImage) {
+                $pzImage.panzoom('zoom', true, { increment: 0.2 });
+            }
+        });
+
+        $('#zoom-reset').on('click', function (e) {
+            e.preventDefault();
+            if ($pzImage) {
+                $pzImage.panzoom('reset');
             }
         });
     </script>
