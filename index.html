@@ -156,14 +156,32 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
-        // Create map focused on Melbourne
-        var map = L.map('map').setView([-37.8136, 144.9631], 12);
+        // Create the map immediately with a default (Melbourne) view
+        const map = L.map('map').setView([-37.8136, 144.9631], 12);
 
+        // Now it's safe to add layers – map is defined
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution:
                 '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
             maxZoom: 19
         }).addTo(map);
+
+        // Try to recenter on user's location
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    map.setView([lat, lng], 14);
+                },
+                () => {
+                    console.warn('Geolocation not allowed or failed, using default Melbourne view.');
+                }
+            );
+        } else {
+            console.warn('Geolocation not supported, using default Melbourne view.');
+        }
+
 
         // Build popup HTML with title + thumbnail
         function buildPopupHtml(title, imageUrl) {
