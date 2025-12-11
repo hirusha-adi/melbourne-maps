@@ -17,7 +17,7 @@ Below is a look at the relevant files for the functioning of this website.
 │   └── tram.png    # PTV's green tram icon
 │
 └── images/
-    ├── demo_image_1.png    # image used for demos
+    ├── demo_image_1.png                # image used for demos
     ├── bus_r732_middleborough_rd.png   # image for a bus entry
     └── tram_r75_s70.png                # image for a tram entry
 ```
