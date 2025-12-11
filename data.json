@@ -8,11 +8,11 @@
         "imageUrl": "images/tram_r75_s70.png"
     },
     {
-        "id": "bus_southern_cross",
+        "id": "bus_r732_middleborough_rd",
         "type": "bus",
-        "title": "Bus Stop: Southern Cross Bus Bay (Sample)",
-        "lat": -37.8183,
-        "lng": 144.9526,
-        "imageUrl": "https://via.placeholder.com/600x400?text=Bus+Stop+Southern+Cross"
+        "title": "Bus 732 - Middleborough Rd",
+        "lat": -37.8520276,
+        "lng": 145.1315660,
+        "imageUrl": "images/bus_r732_middleborough_rd.png"
     }
 ]
